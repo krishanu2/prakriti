@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const images = {
   hero: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1000&q=85",
+  coach: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=85",
   about_1: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=700&q=85",
   food_1: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80",
   workout_1: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=800&q=80",
@@ -245,9 +246,73 @@ function MarqueeSection() {
   );
 }
 
-function AboutSection() {
+function AboutPrakritiSection() {
   return (
     <section id="about" className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
+      <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-16 items-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 1.03 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="relative order-1"
+        >
+          <div className="h-[360px] md:h-[520px] overflow-hidden rounded">
+            <img src={images.coach} alt="Prakriti Bhonsle, certified pre/postnatal fitness coach" className="w-full h-full object-cover" />
+          </div>
+          <div className="hidden md:block absolute -bottom-6 -right-6 bg-blush px-6 py-4 rounded border border-black/[0.10]">
+            <p className="font-archivo font-extrabold text-2xl text-ink leading-none">4+</p>
+            <p className="text-caption text-black/50 mt-1">Years Specializing Postnatal</p>
+          </div>
+        </motion.div>
+
+        <div className="order-2">
+          <motion.p {...revealProps} className="text-caption text-black/50 mb-4">
+            Meet Your Coach
+          </motion.p>
+          <motion.h2 {...revealProps} className="text-h2 text-ink mb-6">
+            Hi, I'm <UnderlineWord>Prakriti.</UnderlineWord>
+          </motion.h2>
+          <motion.div {...revealProps} className="text-body space-y-4 mb-8">
+            <p>
+              I'm a certified pre and postnatal fitness coach — but before that,
+              I was a client. I know what it's like to look at your own postpartum
+              body and not recognize it, and to be handed generic workouts that
+              made things worse instead of better.
+            </p>
+            <p>
+              That's why every program I build starts with one question: where is
+              your body actually right now? Not where a caption says it should be
+              by six weeks. Not where your pre-baby jeans say it should be. Where
+              it actually is.
+            </p>
+            <p>
+              I've spent the last four years specializing in diastasis recti
+              recovery and safe postpartum strength for Indian moms — because
+              healing looks different when you're also running a household,
+              feeding a newborn, and running on four hours of sleep. My job isn't
+              to push you harder. It's to help you get strong enough to trust
+              your body again.
+            </p>
+          </motion.div>
+          <motion.a
+            {...revealProps}
+            href="https://instagram.com/staystrongstaywild"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-outline"
+          >
+            Follow the Journey on Instagram
+          </motion.a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TransformPhilosophySection() {
+  return (
+    <section className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[900px] mx-auto text-center relative">
         <div className="hidden md:block absolute -top-10 right-0 w-[110px] h-[110px] rounded overflow-hidden">
           <img src={images.food_1} alt="Healthy plate of eggs and berries" className="w-full h-full object-cover" />
@@ -610,8 +675,9 @@ export default function App() {
     <div className="bg-cream">
       <Navbar />
       <HeroSection />
+      <AboutPrakritiSection />
       <MarqueeSection />
-      <AboutSection />
+      <TransformPhilosophySection />
       <PhilosophySection />
       <ProgramDetailSection />
       <CredentialsStrip />
