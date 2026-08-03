@@ -19,10 +19,10 @@ const images = {
   gal_6: "https://images.unsplash.com/photo-1552196563-55cd4e45efb3?w=600&h=750&q=80&fit=crop",
   gal_7: "https://images.unsplash.com/photo-1543342384-1f1350e27861?w=600&h=750&q=80&fit=crop",
   gal_8: "https://images.unsplash.com/photo-1584863231364-2edc166de576?w=600&h=750&q=80&fit=crop",
-  t1: "https://images.unsplash.com/photo-1607346256330-dee7af15f7c5?w=100&q=80",
+  t1: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&q=80",
   t2: "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?w=100&q=80",
   t3: "https://images.unsplash.com/photo-1618835962148-cf177563c6c0?w=100&q=80",
-  t4: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&q=80",
+  t4: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80",
   t5: "https://images.unsplash.com/photo-1621784563330-caee0b138a00?w=100&q=80",
   t6: "https://images.unsplash.com/photo-1611432579699-484f7990b127?w=100&q=80",
 };
