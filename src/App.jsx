@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const images = {
-  hero: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1000&q=85",
+  hero: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=1000&q=85",
   coach: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=900&q=85",
   about_1: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=700&q=85",
   food_1: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80",
