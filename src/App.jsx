@@ -182,7 +182,7 @@ function Navbar() {
 
 function HeroSection() {
   return (
-    <section className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:min-h-[clamp(500px,80vh,780px)]">
+    <section className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:h-[clamp(500px,80vh,780px)]">
       <div className="bg-blush flex flex-col justify-center px-5 py-14 md:px-16 md:py-0 order-2 md:order-1">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -220,9 +220,14 @@ function HeroSection() {
         initial={{ opacity: 0, scale: 1.05 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1 }}
-        className="relative overflow-hidden h-[380px] md:h-auto order-1 md:order-2"
+        className="relative overflow-hidden h-[380px] md:h-full order-1 md:order-2"
       >
-        <img src={images.hero} alt="Prakriti Bhonsle, pre/postnatal fitness coach" className="w-full h-full object-cover" />
+        <img
+          src={images.hero}
+          alt="Prakriti Bhonsle, pre/postnatal fitness coach"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: '50% 15%' }}
+        />
       </motion.div>
     </section>
   );
