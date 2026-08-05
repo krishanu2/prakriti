@@ -37,26 +37,26 @@ export const api = {
   // leads
   getLeads: () => request('/api/admin/leads'),
   updateLeadStatus: (id, status) =>
-    request(`/api/admin/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
-  deleteLead: (id) => request(`/api/admin/leads/${id}`, { method: 'DELETE' }),
+    request(`/api/admin/leads?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  deleteLead: (id) => request(`/api/admin/leads?id=${id}`, { method: 'DELETE' }),
 
   // gallery
   getGallery: () => request('/api/gallery'),
   addGalleryImage: (payload) => request('/api/gallery', { method: 'POST', body: JSON.stringify(payload) }),
-  updateGalleryImage: (id, payload) => request(`/api/gallery/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  deleteGalleryImage: (id) => request(`/api/gallery/${id}`, { method: 'DELETE' }),
+  updateGalleryImage: (id, payload) => request(`/api/gallery?id=${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteGalleryImage: (id) => request(`/api/gallery?id=${id}`, { method: 'DELETE' }),
 
   // testimonials
   getTestimonials: () => request('/api/testimonials'),
   addTestimonial: (payload) => request('/api/testimonials', { method: 'POST', body: JSON.stringify(payload) }),
-  updateTestimonial: (id, payload) => request(`/api/testimonials/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  deleteTestimonial: (id) => request(`/api/testimonials/${id}`, { method: 'DELETE' }),
+  updateTestimonial: (id, payload) => request(`/api/testimonials?id=${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteTestimonial: (id) => request(`/api/testimonials?id=${id}`, { method: 'DELETE' }),
 
   // faqs
   getFaqs: () => request('/api/faqs'),
   addFaq: (payload) => request('/api/faqs', { method: 'POST', body: JSON.stringify(payload) }),
-  updateFaq: (id, payload) => request(`/api/faqs/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-  deleteFaq: (id) => request(`/api/faqs/${id}`, { method: 'DELETE' }),
+  updateFaq: (id, payload) => request(`/api/faqs?id=${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  deleteFaq: (id) => request(`/api/faqs?id=${id}`, { method: 'DELETE' }),
 
   // photo upload — uploads straight from the browser to storage and
   // returns a public URL to save onto a gallery/testimonial row.
