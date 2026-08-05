@@ -1,5 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+  useVelocity,
+  useSpring,
+  useAnimationFrame,
+  useMotionValue,
+  useReducedMotion,
+  useInView,
+  animate,
+} from 'framer-motion';
 
 const images = {
   hero: "https://images.unsplash.com/photo-1606902965551-dce093cda6e7?w=1000&q=85",
@@ -86,37 +98,126 @@ const revealProps = {
   transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
 };
 
-function UnderlineWord({ children }) {
+// Signature motion moment: the hand-drawn underline/circle accents don't just
+// appear, they draw themselves in — like a pen following the word — the
+// instant each one scrolls into view.
+function UnderlineWord({ children, delay = 0.35 }) {
   return (
     <span className="relative inline-block">
       {children}
       <svg className="absolute -bottom-1 left-0 w-full h-2" viewBox="0 0 100 8" preserveAspectRatio="none">
-        <path d="M0,5 Q25,2 50,5 T100,4" stroke="var(--ink)" strokeWidth="2" fill="none" />
+        <motion.path
+          d="M0,5 Q25,2 50,5 T100,4"
+          stroke="var(--ink)"
+          strokeWidth="2"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true, margin: '0px 0px -40px 0px' }}
+          transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1], delay }}
+        />
       </svg>
     </span>
   );
 }
 
-function CircledWord({ children }) {
+function CircledWord({ children, delay = 0.35 }) {
   return (
     <span className="relative inline-block px-2">
       {children}
       <svg className="absolute -top-2 -left-2 pointer-events-none" style={{ width: 'calc(100% + 20px)', height: 'calc(100% + 16px)' }} viewBox="0 0 100 40" preserveAspectRatio="none">
-        <ellipse cx="50" cy="20" rx="48" ry="18" stroke="var(--ink)" strokeWidth="1.5" fill="none" />
+        <motion.ellipse
+          cx="50" cy="20" rx="48" ry="18"
+          stroke="var(--ink)" strokeWidth="1.5" fill="none"
+          initial={{ pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true, margin: '0px 0px -40px 0px' }}
+          transition={{ duration: 0.85, ease: [0.65, 0, 0.35, 1], delay }}
+        />
       </svg>
     </span>
+  );
+}
+
+// Reusable "wipe + settle" photo reveal: the image uncovers itself top-down
+// while gently zooming in to rest, instead of a flat fade. Used for the
+// site's key editorial photo moments.
+function RevealImage({ src, alt, className = '', delay = 0 }) {
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <motion.div
+        initial={{ clipPath: 'inset(0 0 100% 0)' }}
+        whileInView={{ clipPath: 'inset(0 0 0% 0)' }}
+        viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+        transition={{ duration: 0.9, ease: [0.83, 0, 0.17, 1], delay }}
+        className="absolute inset-0"
+      >
+        <motion.img
+          src={src}
+          alt={alt}
+          initial={{ scale: 1.15 }}
+          whileInView={{ scale: 1 }}
+          viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1], delay }}
+          className="w-full h-full object-cover"
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+// Stat numbers count up from zero the moment they scroll into view.
+function CountUp({ value, prefix = '', suffix = '' }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-40px' });
+  const [display, setDisplay] = useState(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!inView) return;
+    if (reduceMotion) {
+      setDisplay(value);
+      return;
+    }
+    const controls = animate(0, value, {
+      duration: 1.3,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, value, reduceMotion]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {display}
+      {suffix}
+    </span>
+  );
+}
+
+// A thin line at the very top that fills as you scroll down the page —
+// a quiet callback to the hand-drawn underline motif.
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 40, restDelta: 0.001 });
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-[2.5px] z-[110] origin-left"
+      style={{ scaleX, background: 'var(--ink)' }}
+    />
   );
 }
 
 function AccordionRow({ title, body }) {
   const [open, setOpen] = useState(false);
   return (
-    <div onClick={() => setOpen(!open)} className="border-t border-black/[0.18] py-[18px] cursor-pointer">
+    <div onClick={() => setOpen(!open)} className="border-t border-black/[0.18] py-[18px] px-3 -mx-3 cursor-pointer rounded transition-colors duration-200 hover:bg-black/[0.025]">
       <div className="flex justify-between items-center gap-4">
         <span className="font-inter font-semibold text-sm text-ink tracking-wide uppercase">{title}</span>
         <span
-          className="text-lg text-ink shrink-0 transition-transform duration-250"
-          style={{ transform: open ? 'rotate(45deg)' : 'none' }}
+          className="text-lg text-ink shrink-0 transition-transform duration-300"
+          style={{ transform: open ? 'rotate(45deg)' : 'none', transitionTimingFunction: 'cubic-bezier(0.68,-0.4,0.32,1.4)' }}
         >+</span>
       </div>
       <motion.div initial={false} animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }} className="overflow-hidden">
@@ -128,7 +229,10 @@ function AccordionRow({ title, body }) {
 
 function ReviewCard({ name, context, quote, avatar_url }) {
   return (
-    <div className="shrink-0 w-[300px] md:w-[380px] bg-white rounded-lg p-7 border border-black/[0.10]">
+    <motion.div
+      whileHover={{ y: -6, boxShadow: '0 18px 34px rgba(26,25,23,0.09)', transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+      className="shrink-0 w-[300px] md:w-[380px] bg-white rounded-lg p-7 border border-black/[0.10]"
+    >
       <p className="font-archivo font-bold text-3xl text-black/50 leading-none">&ldquo;</p>
       <p className="text-body text-[15px] text-ink my-3 mb-6 leading-7">{quote}</p>
       <div className="flex items-center gap-3 border-t border-black/[0.10] pt-4">
@@ -138,19 +242,50 @@ function ReviewCard({ name, context, quote, avatar_url }) {
           <p className="text-caption text-black/50 text-[10px]">{context}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
   const links = ['Method', 'Results', 'About', 'Guide'];
+
+  useEffect(() => {
+    if (drawerOpen) setHidden(false);
+  }, [drawerOpen]);
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      if (!drawerOpen) {
+        setHidden(y > lastY.current && y > 140);
+      }
+      lastY.current = y;
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [drawerOpen]);
+
   return (
-    <nav className="bg-cream sticky top-0 z-[100] border-b border-black/[0.10]">
-      <div className="flex items-center justify-between px-5 md:px-16 py-5">
+    // The sticky positioning lives on this plain, untransformed wrapper —
+    // Chromium drops position:sticky on an element that also carries a
+    // transform, so the hide/show animation has to happen one level in.
+    <div className="sticky top-0 z-[100]">
+    <motion.nav
+      animate={{ y: hidden ? '-100%' : '0%' }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className={`bg-cream border-b transition-shadow duration-300 ${
+        scrolled ? 'border-black/[0.12] shadow-[0_6px_24px_rgba(26,25,23,0.06)]' : 'border-black/[0.10]'
+      }`}
+    >
+      <div className={`flex items-center justify-between px-5 md:px-16 transition-[padding] duration-300 ${scrolled ? 'py-3.5' : 'py-5'}`}>
         <div className="hidden md:flex gap-7">
           {links.map(link => (
-            <a key={link} href={`#${link.toLowerCase()}`} className="font-inter text-[13px] font-medium text-ink">
+            <a key={link} href={`#${link.toLowerCase()}`} className="nav-link font-inter text-[13px] font-medium text-ink">
               {link}
             </a>
           ))}
@@ -162,7 +297,7 @@ function Navbar() {
 
         <div className="flex items-center gap-3 md:gap-5">
           <div className="hidden md:flex gap-4">
-            <a href="https://instagram.com/staystrongstaywild" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-ink text-[13px] font-medium">
+            <a href="https://instagram.com/staystrongstaywild" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="nav-link text-ink text-[13px] font-medium">
               IG
             </a>
           </div>
@@ -206,13 +341,19 @@ function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
+    </div>
   );
 }
 
 function HeroSection() {
+  const sectionRef = useRef(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] });
+  const photoY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [0, 90]);
+
   return (
-    <section className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:h-[clamp(500px,80vh,780px)]">
+    <section ref={sectionRef} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:h-[clamp(500px,80vh,780px)]">
       <div className="bg-blush flex flex-col justify-center px-5 py-14 md:px-16 md:py-0 order-2 md:order-1">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -221,8 +362,8 @@ function HeroSection() {
           className="text-display text-ink mb-6"
         >
           Strength comes back<br />
-          <UnderlineWord>slower</UnderlineWord> than you<br />
-          expected. <UnderlineWord>That's okay.</UnderlineWord>
+          <UnderlineWord delay={0.6}>slower</UnderlineWord> than you<br />
+          expected. <UnderlineWord delay={0.85}>That's okay.</UnderlineWord>
         </motion.h1>
 
         <motion.p
@@ -246,27 +387,57 @@ function HeroSection() {
         </motion.a>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1 }}
-        className="relative overflow-hidden h-[380px] md:h-full order-1 md:order-2"
-      >
-        <img
-          src={images.hero}
-          alt="Prakriti Bhonsle, pre/postnatal fitness coach"
-          className="w-full h-full object-cover"
-          style={{ objectPosition: '50% 15%' }}
-        />
-      </motion.div>
+      <div className="relative overflow-hidden h-[380px] md:h-full order-1 md:order-2">
+        <motion.div
+          initial={{ clipPath: 'inset(0 0 100% 0)' }}
+          animate={{ clipPath: 'inset(0 0 0% 0)' }}
+          transition={{ duration: 1.1, ease: [0.83, 0, 0.17, 1] }}
+          className="absolute inset-0"
+        >
+          <motion.img
+            src={images.hero}
+            alt="Prakriti Bhonsle, pre/postnatal fitness coach"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: '50% 15%', y: photoY, scale: 1.12 }}
+          />
+        </motion.div>
+      </div>
     </section>
   );
 }
 
+function wrapValue(min, max, v) {
+  const range = max - min;
+  return (((v - min) % range) + range) % range + min;
+}
+
+// The giant marquee text breathes with your scroll — it crawls gently at
+// rest, and surges (even reversing direction) as you scroll fast, like the
+// page itself is responding to your hand.
 function MarqueeSection() {
+  const baseX = useMotionValue(0);
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 400 });
+  const velocityFactor = useTransform(smoothVelocity, [-1500, 0, 1500], [-4, 0, 4], { clamp: true });
+  const directionFactor = useRef(1);
+  const reduceMotion = useReducedMotion();
+  const x = useTransform(baseX, (v) => `${wrapValue(-33.333, 0, v)}%`);
+
+  useAnimationFrame((t, delta) => {
+    if (reduceMotion) return;
+    const baseSpeed = 1.6; // % of track width per second, at rest
+    let moveBy = directionFactor.current * baseSpeed * (delta / 1000);
+    const vf = velocityFactor.get();
+    if (vf < 0) directionFactor.current = -1;
+    else if (vf > 0) directionFactor.current = 1;
+    moveBy += directionFactor.current * moveBy * Math.abs(vf);
+    baseX.set(baseX.get() - moveBy);
+  });
+
   return (
     <section className="bg-cream py-8 overflow-hidden">
-      <div className="marquee-track flex w-max">
+      <motion.div className="flex w-max" style={{ x }}>
         {[1, 2, 3].map(i => (
           <span
             key={i}
@@ -276,7 +447,7 @@ function MarqueeSection() {
             HEAL FIRST ✳ STRENGTH FOLLOWS ✳ NO RUSH ✳
           </span>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 }
@@ -285,21 +456,25 @@ function AboutPrakritiSection() {
   return (
     <section id="about" className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-16 items-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.03 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          className="relative order-1"
-        >
-          <div className="h-[360px] md:h-[520px] overflow-hidden rounded">
-            <img src={images.coach} alt="Prakriti Bhonsle, certified pre/postnatal fitness coach" className="w-full h-full object-cover" />
-          </div>
-          <div className="hidden md:block absolute -bottom-6 -right-6 bg-blush px-6 py-4 rounded border border-black/[0.10]">
-            <p className="font-archivo font-extrabold text-2xl text-ink leading-none">4+</p>
+        <div className="relative order-1">
+          <RevealImage
+            src={images.coach}
+            alt="Prakriti Bhonsle, certified pre/postnatal fitness coach"
+            className="h-[360px] md:h-[520px] rounded"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="hidden md:block absolute -bottom-6 -right-6 bg-blush px-6 py-4 rounded border border-black/[0.10]"
+          >
+            <p className="font-archivo font-extrabold text-2xl text-ink leading-none">
+              <CountUp value={4} suffix="+" />
+            </p>
             <p className="text-caption text-black/50 mt-1">Years Specializing Postnatal</p>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         <div className="order-2">
           <motion.p {...revealProps} className="text-caption text-black/50 mb-4">
@@ -392,6 +567,7 @@ function PhilosophySection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
+              whileHover={{ y: -6, boxShadow: '0 18px 34px rgba(26,25,23,0.09)', transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
               className="bg-cream p-9 md:p-9 rounded-lg border border-black/[0.10]"
             >
               <span className="font-archivo font-extrabold text-[13px] text-black/50">{pillar.num}</span>
@@ -414,14 +590,11 @@ function ProgramDetailSection() {
   return (
     <section className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.03 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="h-[320px] md:h-[clamp(360px,45vw,520px)] overflow-hidden rounded order-1"
-        >
-          <img src={images.workout_1} alt="Postpartum-friendly home workout" className="w-full h-full object-cover" />
-        </motion.div>
+        <RevealImage
+          src={images.workout_1}
+          alt="Postpartum-friendly home workout"
+          className="h-[320px] md:h-[clamp(360px,45vw,520px)] rounded order-1"
+        />
 
         <div className="order-2">
           <h2 className="text-h2 text-ink mb-2">Postpartum Strength Coaching</h2>
@@ -444,17 +617,17 @@ function ProgramDetailSection() {
 
 function CredentialsStrip() {
   const stats = [
-    { num: '250+', label: 'Moms Coached' },
-    { num: '4', label: 'Yrs Specializing Postnatal' },
-    { num: 'Certified', label: 'Pre/Postnatal Coach' },
-    { num: '6-10wk', label: 'Avg. DR Gap Improvement' },
+    { render: () => <CountUp value={250} suffix="+" />, label: 'Moms Coached' },
+    { render: () => <CountUp value={4} />, label: 'Yrs Specializing Postnatal' },
+    { render: () => 'Certified', label: 'Pre/Postnatal Coach' },
+    { render: () => <CountUp value={10} prefix="6-" suffix="wk" />, label: 'Avg. DR Gap Improvement' },
   ];
   return (
     <section className="bg-blush px-5 md:px-16 py-12">
       <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         {stats.map((stat, i) => (
           <div key={i}>
-            <p className="font-archivo font-extrabold text-2xl md:text-3xl text-ink">{stat.num}</p>
+            <p className="font-archivo font-extrabold text-2xl md:text-3xl text-ink">{stat.render()}</p>
             <p className="text-caption text-ink/70 mt-1.5 text-[11px] md:text-[13px]">{stat.label}</p>
           </div>
         ))}
@@ -477,7 +650,7 @@ function GallerySection() {
       <div className="overflow-hidden">
         <div className="gallery-track flex gap-4 w-max">
           {track.map((item, i) => (
-            <div key={`${item.id}-${i}`} className="shrink-0 w-[220px] md:w-[clamp(220px,24vw,300px)] aspect-[4/5] rounded overflow-hidden bg-blush">
+            <div key={`${item.id}-${i}`} className="gallery-item shrink-0 w-[220px] md:w-[clamp(220px,24vw,300px)] aspect-[4/5] rounded overflow-hidden bg-blush">
               <img src={item.image_url} alt={item.alt_text || 'Client journey'} className="w-full h-full object-cover" loading="lazy" />
             </div>
           ))}
@@ -501,10 +674,15 @@ function TransformationSection() {
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {items.map((item, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <div className="h-[280px] md:h-[320px] rounded overflow-hidden mb-4">
-                <img src={item.img} alt={item.context} className="w-full h-full object-cover" loading="lazy" />
-              </div>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{ y: -6, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+            >
+              <RevealImage src={item.img} alt={item.context} className="h-[280px] md:h-[320px] rounded mb-4" delay={i * 0.08} />
               <p className="text-caption text-black/50">{item.context}</p>
               <p className="font-inter font-semibold text-sm text-ink mt-1">{item.detail}</p>
             </motion.div>
@@ -598,12 +776,12 @@ function ManifestoSection() {
 function FAQItem({ question, answer }) {
   const [open, setOpen] = useState(false);
   return (
-    <div onClick={() => setOpen(!open)} className="border-t border-black/[0.18] py-5 cursor-pointer">
+    <div onClick={() => setOpen(!open)} className="border-t border-black/[0.18] py-5 px-3 -mx-3 cursor-pointer rounded transition-colors duration-200 hover:bg-black/[0.025]">
       <div className="flex justify-between items-center gap-4">
         <span className="font-inter font-semibold text-[15px] text-ink">{question}</span>
         <span
-          className="text-xl text-ink shrink-0 transition-transform duration-250"
-          style={{ transform: open ? 'rotate(45deg)' : 'none' }}
+          className="text-xl text-ink shrink-0 transition-transform duration-300"
+          style={{ transform: open ? 'rotate(45deg)' : 'none', transitionTimingFunction: 'cubic-bezier(0.68,-0.4,0.32,1.4)' }}
         >+</span>
       </div>
       <motion.div initial={false} animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }} className="overflow-hidden">
@@ -819,7 +997,7 @@ function Footer() {
         </div>
         <div className="flex gap-8 flex-wrap">
           {links.map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`} className="font-inter text-[13px] text-ink/70">{l}</a>
+            <a key={l} href={`#${l.toLowerCase()}`} className="nav-link font-inter text-[13px] text-ink/70">{l}</a>
           ))}
         </div>
       </div>
@@ -866,6 +1044,7 @@ function StickyMobileCTA() {
 export default function App() {
   return (
     <div className="bg-cream">
+      <ScrollProgressBar />
       <Navbar />
       <HeroSection />
       <AboutPrakritiSection />
