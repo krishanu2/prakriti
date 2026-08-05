@@ -27,27 +27,57 @@ const images = {
   t6: "https://images.unsplash.com/photo-1611432579699-484f7990b127?w=100&q=80",
 };
 
-const galleryImages = [
-  images.gal_1, images.gal_2, images.gal_3, images.gal_4,
-  images.gal_5, images.gal_6, images.gal_7, images.gal_8,
+// Fallback content — shown instantly and whenever the API is unreachable.
+// Shape matches the database rows exactly, so live data can drop in seamlessly.
+const fallbackGallery = [
+  { id: 'fb-1', image_url: images.gal_1, alt_text: 'Client workout moment' },
+  { id: 'fb-2', image_url: images.gal_2, alt_text: 'Pregnant client, soft light' },
+  { id: 'fb-3', image_url: images.gal_3, alt_text: 'Client core exercise' },
+  { id: 'fb-4', image_url: images.gal_4, alt_text: 'Mother and baby, warm moment' },
+  { id: 'fb-5', image_url: images.gal_5, alt_text: 'Client stretching' },
+  { id: 'fb-6', image_url: images.gal_6, alt_text: 'Home workout session' },
+  { id: 'fb-7', image_url: images.gal_7, alt_text: 'Mother and baby moment' },
+  { id: 'fb-8', image_url: images.gal_8, alt_text: 'Client strength training' },
 ];
 
-const reviews = [
-  { name: 'Ritika S.', context: '6 weeks postpartum', quote: "First coach who told me to slow down instead of pushing harder. My diastasis gap actually closed instead of getting worse.", img: images.t1 },
-  { name: 'Ananya M.', context: 'Diastasis Recti Recovery', quote: "She explained why my old trainer's ab exercises were making things worse. Nobody had ever told me that before.", img: images.t2 },
-  { name: 'Priya K.', context: '4 months postpartum', quote: "I cried reading her caption about appreciating the body you have. That's exactly how coaching with her feels too.", img: images.t3 },
-  { name: 'Simran D.', context: 'Managing PCOS + Postpartum', quote: "She doesn't just program workouts. She actually checks how you're doing, and it doesn't feel fake.", img: images.t4 },
-  { name: 'Neha T.', context: '1 year postpartum', quote: "I'd tried three trainers before her. She was the first one who asked about my gap before giving me a single exercise.", img: images.t5 },
-  { name: 'Kavya R.', context: 'Weight regain + core strength', quote: "No shame, no rush, no 'get your body back' language. Just real, steady progress I could actually stick to.", img: images.t6 },
+const fallbackReviews = [
+  { id: 'fb-1', name: 'Ritika S.', context: '6 weeks postpartum', quote: "First coach who told me to slow down instead of pushing harder. My diastasis gap actually closed instead of getting worse.", avatar_url: images.t1 },
+  { id: 'fb-2', name: 'Ananya M.', context: 'Diastasis Recti Recovery', quote: "She explained why my old trainer's ab exercises were making things worse. Nobody had ever told me that before.", avatar_url: images.t2 },
+  { id: 'fb-3', name: 'Priya K.', context: '4 months postpartum', quote: "I cried reading her caption about appreciating the body you have. That's exactly how coaching with her feels too.", avatar_url: images.t3 },
+  { id: 'fb-4', name: 'Simran D.', context: 'Managing PCOS + Postpartum', quote: "She doesn't just program workouts. She actually checks how you're doing, and it doesn't feel fake.", avatar_url: images.t4 },
+  { id: 'fb-5', name: 'Neha T.', context: '1 year postpartum', quote: "I'd tried three trainers before her. She was the first one who asked about my gap before giving me a single exercise.", avatar_url: images.t5 },
+  { id: 'fb-6', name: 'Kavya R.', context: 'Weight regain + core strength', quote: "No shame, no rush, no 'get your body back' language. Just real, steady progress I could actually stick to.", avatar_url: images.t6 },
 ];
 
-const faqs = [
-  { q: "Is this safe if I'm still healing from delivery?", a: "Yes — that's the entire premise. We assess your diastasis recti and core function before any program starts, and everything is built around where your body actually is right now." },
-  { q: "I'm 2 years postpartum, is it too late?", a: "No. Healing timelines aren't linear or expiring — many clients start well past the '6-week clearance' window with real, lasting results." },
-  { q: "Do you coach online or in-person?", a: "Both, depending on location — most coaching happens over WhatsApp with video check-ins and form review." },
-  { q: "What if I have diastasis recti or a hernia?", a: "This is specifically what the program is built around. Assessment comes first, always." },
-  { q: "How is this different from a normal gym trainer?", a: "Certified pre/postnatal specialization — most gym trainers aren't trained in diastasis recti or safe postpartum progression, which is exactly why so many clients come here after a bad experience elsewhere." },
+const fallbackFaqs = [
+  { id: 'fb-1', question: "Is this safe if I'm still healing from delivery?", answer: "Yes — that's the entire premise. We assess your diastasis recti and core function before any program starts, and everything is built around where your body actually is right now." },
+  { id: 'fb-2', question: "I'm 2 years postpartum, is it too late?", answer: "No. Healing timelines aren't linear or expiring — many clients start well past the '6-week clearance' window with real, lasting results." },
+  { id: 'fb-3', question: "Do you coach online or in-person?", answer: "Both, depending on location — most coaching happens over WhatsApp with video check-ins and form review." },
+  { id: 'fb-4', question: "What if I have diastasis recti or a hernia?", answer: "This is specifically what the program is built around. Assessment comes first, always." },
+  { id: 'fb-5', question: "How is this different from a normal gym trainer?", answer: "Certified pre/postnatal specialization — most gym trainers aren't trained in diastasis recti or safe postpartum progression, which is exactly why so many clients come here after a bad experience elsewhere." },
 ];
+
+// Loads live content from the admin-managed API, falling back to the
+// hardcoded content above (instantly, and silently on any fetch failure)
+// so the site never shows an empty or broken section.
+function useLiveList(endpoint, fallback) {
+  const [data, setData] = useState(fallback);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(endpoint)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('bad response'))))
+      .then((rows) => {
+        if (!cancelled && Array.isArray(rows) && rows.length > 0) setData(rows);
+      })
+      .catch(() => {
+        /* keep fallback content */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [endpoint]);
+  return data;
+}
 
 const revealProps = {
   initial: { opacity: 0, y: 20 },
@@ -96,13 +126,13 @@ function AccordionRow({ title, body }) {
   );
 }
 
-function ReviewCard({ name, context, quote, img }) {
+function ReviewCard({ name, context, quote, avatar_url }) {
   return (
     <div className="shrink-0 w-[300px] md:w-[380px] bg-white rounded-lg p-7 border border-black/[0.10]">
       <p className="font-archivo font-bold text-3xl text-black/50 leading-none">&ldquo;</p>
       <p className="text-body text-[15px] text-ink my-3 mb-6 leading-7">{quote}</p>
       <div className="flex items-center gap-3 border-t border-black/[0.10] pt-4">
-        <img src={img} alt={name} className="w-[38px] h-[38px] rounded-full object-cover" loading="lazy" />
+        <img src={avatar_url} alt={name} className="w-[38px] h-[38px] rounded-full object-cover bg-blush" loading="lazy" />
         <div>
           <p className="font-inter font-semibold text-[13px] text-ink">{name}</p>
           <p className="text-caption text-black/50 text-[10px]">{context}</p>
@@ -434,7 +464,8 @@ function CredentialsStrip() {
 }
 
 function GallerySection() {
-  const track = [...galleryImages, ...galleryImages];
+  const gallery = useLiveList('/api/gallery', fallbackGallery);
+  const track = [...gallery, ...gallery];
   return (
     <section id="results" className="bg-cream py-14 md:py-[clamp(64px,9vw,120px)] overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-5 md:px-16 mb-10">
@@ -445,9 +476,9 @@ function GallerySection() {
 
       <div className="overflow-hidden">
         <div className="gallery-track flex gap-4 w-max">
-          {track.map((img, i) => (
-            <div key={i} className="shrink-0 w-[220px] md:w-[clamp(220px,24vw,300px)] aspect-[4/5] rounded overflow-hidden">
-              <img src={img} alt="Client journey" className="w-full h-full object-cover" loading="lazy" />
+          {track.map((item, i) => (
+            <div key={`${item.id}-${i}`} className="shrink-0 w-[220px] md:w-[clamp(220px,24vw,300px)] aspect-[4/5] rounded overflow-hidden bg-blush">
+              <img src={item.image_url} alt={item.alt_text || 'Client journey'} className="w-full h-full object-cover" loading="lazy" />
             </div>
           ))}
         </div>
@@ -485,6 +516,7 @@ function TransformationSection() {
 }
 
 function ReviewsSection() {
+  const reviews = useLiveList('/api/testimonials', fallbackReviews);
   const track = [...reviews, ...reviews];
   return (
     <section className="bg-cream py-14 md:py-[clamp(64px,9vw,120px)] overflow-hidden">
@@ -496,7 +528,7 @@ function ReviewsSection() {
 
       <div className="overflow-hidden">
         <div className="reviews-track flex gap-5 w-max">
-          {track.map((r, i) => <ReviewCard key={i} {...r} />)}
+          {track.map((r, i) => <ReviewCard key={`${r.id}-${i}`} {...r} />)}
         </div>
       </div>
     </section>
@@ -563,25 +595,26 @@ function ManifestoSection() {
   );
 }
 
-function FAQItem({ q, a }) {
+function FAQItem({ question, answer }) {
   const [open, setOpen] = useState(false);
   return (
     <div onClick={() => setOpen(!open)} className="border-t border-black/[0.18] py-5 cursor-pointer">
       <div className="flex justify-between items-center gap-4">
-        <span className="font-inter font-semibold text-[15px] text-ink">{q}</span>
+        <span className="font-inter font-semibold text-[15px] text-ink">{question}</span>
         <span
           className="text-xl text-ink shrink-0 transition-transform duration-250"
           style={{ transform: open ? 'rotate(45deg)' : 'none' }}
         >+</span>
       </div>
       <motion.div initial={false} animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }} className="overflow-hidden">
-        <p className="text-body text-sm pt-3 max-w-[600px]">{a}</p>
+        <p className="text-body text-sm pt-3 max-w-[600px]">{answer}</p>
       </motion.div>
     </div>
   );
 }
 
 function FAQSection() {
+  const faqs = useLiveList('/api/faqs', fallbackFaqs);
   return (
     <section id="guide" className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[720px] mx-auto">
@@ -589,32 +622,187 @@ function FAQSection() {
           Questions, <UnderlineWord>answered honestly</UnderlineWord>
         </motion.h2>
         <div>
-          {faqs.map((f, i) => <FAQItem key={i} q={f.q} a={f.a} />)}
+          {faqs.map((f) => <FAQItem key={f.id} question={f.question} answer={f.answer} />)}
         </div>
       </div>
     </section>
   );
 }
 
+function EnquiryForm() {
+  const STORAGE_KEY = 'ssw_enquiry_status';
+
+  const [status, setStatus] = useState('idle'); // idle | submitting | success | already
+  const [errorMsg, setErrorMsg] = useState('');
+  const [fields, setFields] = useState({ name: '', email: '', phone: '', message: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage.getItem(STORAGE_KEY) === 'submitted') {
+      setStatus('already');
+    }
+  }, []);
+
+  function validate() {
+    const errs = {};
+    if (!fields.name.trim()) errs.name = 'Please enter your name.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.trim())) errs.email = 'Enter a valid email address.';
+    if (fields.phone.replace(/\D/g, '').length < 10) errs.phone = 'Enter a valid 10-digit phone number.';
+    return errs;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const errs = validate();
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    setStatus('submitting');
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 201) {
+        window.localStorage.setItem(STORAGE_KEY, 'submitted');
+        setStatus('success');
+        return;
+      }
+      if (res.status === 409) {
+        window.localStorage.setItem(STORAGE_KEY, 'submitted');
+        setStatus('already');
+        return;
+      }
+      setErrorMsg(data.error || 'Something went wrong. Please try again.');
+      setStatus('idle');
+    } catch {
+      setErrorMsg('Something went wrong. Please check your connection and try again.');
+      setStatus('idle');
+    }
+  }
+
+  function resetForSomeoneElse() {
+    window.localStorage.removeItem(STORAGE_KEY);
+    setFields({ name: '', email: '', phone: '', message: '' });
+    setFieldErrors({});
+    setErrorMsg('');
+    setStatus('idle');
+  }
+
+  if (status === 'already') {
+    return (
+      <div className="bg-white border border-black/[0.1] rounded-lg px-8 py-10 text-center">
+        <p className="text-h3 text-ink mb-2">You're already on the list 🤍</p>
+        <p className="text-body max-w-[420px] mx-auto mb-5">
+          We've got your details — Prakriti will reach out soon. No need to submit again.
+        </p>
+        <button
+          onClick={resetForSomeoneElse}
+          className="text-caption underline decoration-1 underline-offset-4"
+          style={{ color: 'var(--ink-70)' }}
+        >
+          Submitting for someone else?
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="bg-white border border-black/[0.1] rounded-lg px-8 py-10 text-center">
+        <p className="text-h3 text-ink mb-2">Got it — thank you 🤍</p>
+        <p className="text-body max-w-[420px] mx-auto">
+          Prakriti reads every message herself. She'll get back to you soon, usually within a day or two.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="text-left bg-white border border-black/[0.1] rounded-lg p-6 md:p-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <input
+            type="text"
+            placeholder="Your name"
+            value={fields.name}
+            onChange={(e) => setFields((f) => ({ ...f, name: e.target.value }))}
+            className={`field-input ${fieldErrors.name ? 'field-error' : ''}`}
+          />
+          {fieldErrors.name && <p className="text-[12px] mt-1.5" style={{ color: '#a13d2e' }}>{fieldErrors.name}</p>}
+        </div>
+        <div>
+          <input
+            type="tel"
+            placeholder="Phone number"
+            value={fields.phone}
+            onChange={(e) => setFields((f) => ({ ...f, phone: e.target.value }))}
+            className={`field-input ${fieldErrors.phone ? 'field-error' : ''}`}
+          />
+          {fieldErrors.phone && <p className="text-[12px] mt-1.5" style={{ color: '#a13d2e' }}>{fieldErrors.phone}</p>}
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="email"
+          placeholder="Email address"
+          value={fields.email}
+          onChange={(e) => setFields((f) => ({ ...f, email: e.target.value }))}
+          className={`field-input ${fieldErrors.email ? 'field-error' : ''}`}
+        />
+        {fieldErrors.email && <p className="text-[12px] mt-1.5" style={{ color: '#a13d2e' }}>{fieldErrors.email}</p>}
+      </div>
+
+      <div className="mb-5">
+        <textarea
+          placeholder="What's on your mind? (optional)"
+          value={fields.message}
+          onChange={(e) => setFields((f) => ({ ...f, message: e.target.value }))}
+          rows={3}
+          className="field-input resize-none"
+        />
+      </div>
+
+      {errorMsg && <p className="text-[13px] mb-4" style={{ color: '#a13d2e' }}>{errorMsg}</p>}
+
+      <button type="submit" disabled={status === 'submitting'} className="btn-outline w-full !py-4">
+        {status === 'submitting' ? 'Sending…' : 'Send Your Enquiry'}
+      </button>
+
+      <p className="text-caption text-center mt-5" style={{ color: 'var(--ink-50)', textTransform: 'none', letterSpacing: 0 }}>
+        Prefer Instagram?{' '}
+        <a
+          href="https://instagram.com/staystrongstaywild"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline decoration-1 underline-offset-2"
+          style={{ color: 'var(--ink-70)' }}
+        >
+          DM @staystrongstaywild
+        </a>
+      </p>
+    </form>
+  );
+}
+
 function FinalCTASection() {
   return (
     <section id="start" className="bg-cream px-5 md:px-16 py-20 md:py-[clamp(80px,12vw,160px)] text-center">
-      <div className="max-w-[640px] mx-auto">
+      <div className="max-w-[560px] mx-auto">
         <motion.h2 {...revealProps} className="text-display text-ink mb-7">
           Tell me where you're <UnderlineWord>starting from.</UnderlineWord>
         </motion.h2>
         <motion.p {...revealProps} className="text-body mb-9">
-          No forms that feel like a funnel. Just a real conversation about your body, right now.
+          One short note — not a funnel. Tell me a little about you and I'll take it from there.
         </motion.p>
-        <motion.a
-          {...revealProps}
-          href="https://instagram.com/staystrongstaywild"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-outline !px-11 !py-[18px]"
-        >
-          Start the Conversation
-        </motion.a>
+        <motion.div {...revealProps}>
+          <EnquiryForm />
+        </motion.div>
       </div>
     </section>
   );
