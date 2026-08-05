@@ -1,3 +1,5 @@
+import { upload } from '@vercel/blob/client';
+
 // Thin fetch wrapper for the admin API. Every call includes cookies
 // (same-origin session) and throws a friendly Error on failure so callers
 // can just try/catch and show err.message.
@@ -55,4 +57,14 @@ export const api = {
   addFaq: (payload) => request('/api/faqs', { method: 'POST', body: JSON.stringify(payload) }),
   updateFaq: (id, payload) => request(`/api/faqs/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteFaq: (id) => request(`/api/faqs/${id}`, { method: 'DELETE' }),
+
+  // photo upload — uploads straight from the browser to storage and
+  // returns a public URL to save onto a gallery/testimonial row.
+  uploadPhoto: async (file) => {
+    const blob = await upload(file.name, file, {
+      access: 'public',
+      handleUploadUrl: '/api/admin/upload',
+    });
+    return blob.url;
+  },
 };

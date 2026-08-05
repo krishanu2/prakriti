@@ -209,6 +209,125 @@ function ScrollProgressBar() {
   );
 }
 
+// Masks and slides each line of a heading up into place — headlines feel
+// like they're being written into position, not just fading up as a block.
+function RevealLine({ children, delay = 0, className = '' }) {
+  return (
+    <span className={`block overflow-hidden py-2 -my-2 ${className}`}>
+      <motion.span
+        className="block"
+        initial={{ y: '100%' }}
+        whileInView={{ y: '0%' }}
+        viewport={{ once: true, margin: '0px 0px -60px 0px' }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  );
+}
+
+// Primary CTAs pull gently toward the cursor as it nears, and spring back
+// on leave. A no-op on touch (there's no persistent pointer to react to).
+function Magnetic({ children, strength = 0.4, className = '' }) {
+  const ref = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 200, damping: 14, mass: 0.4 });
+  const springY = useSpring(y, { stiffness: 200, damping: 14, mass: 0.4 });
+  const reduceMotion = useReducedMotion();
+
+  function handleMouseMove(e) {
+    if (reduceMotion || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    x.set((e.clientX - (rect.left + rect.width / 2)) * strength);
+    y.set((e.clientY - (rect.top + rect.height / 2)) * strength);
+  }
+  function handleMouseLeave() {
+    x.set(0);
+    y.set(0);
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ x: springX, y: springY }}
+      className={`inline-block ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// A small ink cursor that replaces the system pointer on real mice/trackpads
+// (never on touch) — a dot at rest, opening into a soft ring over anything
+// interactive.
+function CustomCursor() {
+  const [enabled, setEnabled] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  const springX = useSpring(x, { damping: 28, stiffness: 320, mass: 0.4 });
+  const springY = useSpring(y, { damping: 28, stiffness: 320, mass: 0.4 });
+
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    if (!mq.matches) return;
+    setEnabled(true);
+
+    function handleMove(e) {
+      x.set(e.clientX);
+      y.set(e.clientY);
+      const el = e.target.closest('a, button, input, textarea, .cursor-hover');
+      setHovering(!!el);
+    }
+    window.addEventListener('mousemove', handleMove);
+    return () => window.removeEventListener('mousemove', handleMove);
+  }, [x, y]);
+
+  if (!enabled) return null;
+
+  return (
+    // mix-blend-mode: difference inverts whatever is underneath, so the
+    // cursor stays visible on cream, blush, white cards, dark photos, and
+    // the ink-filled button hover state alike — no single fixed color works
+    // everywhere, but this does.
+    <motion.div
+      aria-hidden="true"
+      className="fixed top-0 left-0 pointer-events-none z-[300] rounded-full"
+      style={{
+        x: springX,
+        y: springY,
+        translateX: '-50%',
+        translateY: '-50%',
+        width: hovering ? 44 : 10,
+        height: hovering ? 44 : 10,
+        border: hovering ? '1.3px solid #fff' : 'none',
+        backgroundColor: hovering ? 'transparent' : '#fff',
+        mixBlendMode: 'difference',
+        transition: 'width 350ms cubic-bezier(0.22,1,0.36,1), height 350ms cubic-bezier(0.22,1,0.36,1)',
+      }}
+    />
+  );
+}
+
+// A soft warm highlight that follows the cursor within a card, applied via
+// CSS custom properties (updated directly on the DOM node, not through
+// React state, so it stays smooth at 60fps).
+function useSpotlight() {
+  const ref = useRef(null);
+  function onMouseMove(e) {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${e.clientX - rect.left}px`);
+    el.style.setProperty('--my', `${e.clientY - rect.top}px`);
+  }
+  return { ref, onMouseMove };
+}
+
 function AccordionRow({ title, body }) {
   const [open, setOpen] = useState(false);
   return (
@@ -228,18 +347,24 @@ function AccordionRow({ title, body }) {
 }
 
 function ReviewCard({ name, context, quote, avatar_url }) {
+  const spotlight = useSpotlight();
   return (
     <motion.div
+      ref={spotlight.ref}
+      onMouseMove={spotlight.onMouseMove}
       whileHover={{ y: -6, boxShadow: '0 18px 34px rgba(26,25,23,0.09)', transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-      className="shrink-0 w-[300px] md:w-[380px] bg-white rounded-lg p-7 border border-black/[0.10]"
+      style={{ '--spot-color': 'rgba(228,210,194,0.75)' }}
+      className="spotlight shrink-0 w-[300px] md:w-[380px] bg-white rounded-lg p-7 border border-black/[0.10]"
     >
-      <p className="font-archivo font-bold text-3xl text-black/50 leading-none">&ldquo;</p>
-      <p className="text-body text-[15px] text-ink my-3 mb-6 leading-7">{quote}</p>
-      <div className="flex items-center gap-3 border-t border-black/[0.10] pt-4">
-        <img src={avatar_url} alt={name} className="w-[38px] h-[38px] rounded-full object-cover bg-blush" loading="lazy" />
-        <div>
-          <p className="font-inter font-semibold text-[13px] text-ink">{name}</p>
-          <p className="text-caption text-black/50 text-[10px]">{context}</p>
+      <div className="relative z-[1]">
+        <p className="font-archivo font-bold text-3xl text-black/50 leading-none">&ldquo;</p>
+        <p className="text-body text-[15px] text-ink my-3 mb-6 leading-7">{quote}</p>
+        <div className="flex items-center gap-3 border-t border-black/[0.10] pt-4">
+          <img src={avatar_url} alt={name} className="w-[38px] h-[38px] rounded-full object-cover bg-blush" loading="lazy" />
+          <div>
+            <p className="font-inter font-semibold text-[13px] text-ink">{name}</p>
+            <p className="text-caption text-black/50 text-[10px]">{context}</p>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -301,9 +426,11 @@ function Navbar() {
               IG
             </a>
           </div>
-          <a href="#start" className="btn-outline hidden sm:inline-block !py-2.5 !px-5 !text-[11px]">
-            Start the Conversation
-          </a>
+          <Magnetic strength={0.3} className="hidden sm:inline-block">
+            <a href="#start" className="btn-outline !py-2.5 !px-5 !text-[11px] block">
+              Start the Conversation
+            </a>
+          </Magnetic>
           <button
             className="md:hidden bg-transparent border-none text-xl text-ink cursor-pointer"
             onClick={() => setDrawerOpen(!drawerOpen)}
@@ -355,36 +482,34 @@ function HeroSection() {
   return (
     <section ref={sectionRef} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:h-[clamp(500px,80vh,780px)]">
       <div className="bg-blush flex flex-col justify-center px-5 py-14 md:px-16 md:py-0 order-2 md:order-1">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="text-display text-ink mb-6"
-        >
-          Strength comes back<br />
-          <UnderlineWord delay={0.6}>slower</UnderlineWord> than you<br />
-          expected. <UnderlineWord delay={0.85}>That's okay.</UnderlineWord>
-        </motion.h1>
+        <h1 className="text-display text-ink mb-6">
+          <RevealLine delay={0}>Strength comes back</RevealLine>
+          <RevealLine delay={0.1}><UnderlineWord delay={0.55}>slower</UnderlineWord> than you</RevealLine>
+          <RevealLine delay={0.2}>expected.</RevealLine>
+          <RevealLine delay={0.3}><UnderlineWord delay={0.8}>That's okay.</UnderlineWord></RevealLine>
+        </h1>
 
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.55 }}
           className="text-body max-w-[380px] mb-8"
         >
           Pre and postnatal coaching built around healing first —
           for real bodies, real recovery timelines, real Indian moms.
         </motion.p>
 
-        <motion.a
+        <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          href="#start"
-          className="btn-outline w-full sm:w-auto text-center"
+          transition={{ duration: 0.5, delay: 0.7 }}
         >
-          Start the Conversation
-        </motion.a>
+          <Magnetic className="w-full sm:w-auto">
+            <a href="#start" className="btn-outline w-full sm:w-auto text-center block">
+              Start the Conversation
+            </a>
+          </Magnetic>
+        </motion.div>
       </div>
 
       <div className="relative overflow-hidden h-[380px] md:h-full order-1 md:order-2">
@@ -436,7 +561,7 @@ function MarqueeSection() {
   });
 
   return (
-    <section className="bg-cream py-8 overflow-hidden">
+    <section className="bg-cream py-6 md:py-8 overflow-hidden">
       <motion.div className="flex w-max" style={{ x }}>
         {[1, 2, 3].map(i => (
           <span
@@ -448,6 +573,20 @@ function MarqueeSection() {
           </span>
         ))}
       </motion.div>
+
+      {/* A second, quieter row drifting the opposite way — layered kinetic
+          type for depth, independent of the scroll-reactive row above. */}
+      <div className="marquee-secondary flex w-max mt-2 md:mt-3">
+        {[1, 2, 3].map(i => (
+          <span
+            key={i}
+            className="whitespace-nowrap pr-10 font-archivo font-extrabold text-[clamp(0.9rem,2.2vw,1.35rem)] tracking-[0.08em]"
+            style={{ color: 'rgba(26,25,23,0.2)' }}
+          >
+            REAL BODIES · REAL TIMELINES · REAL RESULTS ·
+          </span>
+        ))}
+      </div>
     </section>
   );
 }
@@ -480,9 +619,9 @@ function AboutPrakritiSection() {
           <motion.p {...revealProps} className="text-caption text-black/50 mb-4">
             Meet Your Coach
           </motion.p>
-          <motion.h2 {...revealProps} className="text-h2 text-ink mb-6">
-            Hi, I'm <UnderlineWord>Prakriti.</UnderlineWord>
-          </motion.h2>
+          <h2 className="text-h2 text-ink mb-6">
+            <RevealLine>Hi, I'm <UnderlineWord>Prakriti.</UnderlineWord></RevealLine>
+          </h2>
           <motion.div {...revealProps} className="text-body space-y-4 mb-8">
             <p>
               I'm a certified pre and postnatal fitness coach — but before that,
@@ -531,9 +670,9 @@ function TransformPhilosophySection() {
           <img src={images.about_1} alt="Calm, seated portrait" className="w-full h-full object-cover" />
         </div>
 
-        <motion.h2 {...revealProps} className="text-h2 text-ink mb-5">
-          <CircledWord>Heal</CircledWord> before you push
-        </motion.h2>
+        <h2 className="text-h2 text-ink mb-5">
+          <RevealLine><CircledWord>Heal</CircledWord> before you push</RevealLine>
+        </h2>
         <motion.p {...revealProps} className="text-body max-w-[520px] mx-auto mb-8">
           A sword cannot replace a needle. Your body needs to be ready before
           complex training — diastasis recti recovery, core function, and safe
@@ -547,6 +686,28 @@ function TransformPhilosophySection() {
   );
 }
 
+function PillarCard({ pillar, i }) {
+  const spotlight = useSpotlight();
+  return (
+    <motion.div
+      ref={spotlight.ref}
+      onMouseMove={spotlight.onMouseMove}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: i * 0.1 }}
+      whileHover={{ y: -6, boxShadow: '0 18px 34px rgba(26,25,23,0.09)', transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+      className="spotlight bg-cream p-9 md:p-9 rounded-lg border border-black/[0.10]"
+    >
+      <div className="relative z-[1]">
+        <span className="font-archivo font-extrabold text-[13px] text-black/50">{pillar.num}</span>
+        <h3 className="text-h3 text-ink my-3">{pillar.title}</h3>
+        <p className="text-body text-sm">{pillar.desc}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 function PhilosophySection() {
   const pillars = [
     { num: '01', title: 'Heal', desc: 'Diastasis recti assessment, core function check, safe movement patterns — before any intensity.' },
@@ -556,25 +717,11 @@ function PhilosophySection() {
   return (
     <section id="method" className="bg-blush px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[1200px] mx-auto">
-        <motion.h2 {...revealProps} className="text-h2 text-ink text-center mb-14">
-          Three stages. <UnderlineWord>One timeline</UnderlineWord> that's actually yours.
-        </motion.h2>
+        <h2 className="text-h2 text-ink text-center mb-14">
+          <RevealLine>Three stages. <UnderlineWord>One timeline</UnderlineWord> that's actually yours.</RevealLine>
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {pillars.map((pillar, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              whileHover={{ y: -6, boxShadow: '0 18px 34px rgba(26,25,23,0.09)', transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
-              className="bg-cream p-9 md:p-9 rounded-lg border border-black/[0.10]"
-            >
-              <span className="font-archivo font-extrabold text-[13px] text-black/50">{pillar.num}</span>
-              <h3 className="text-h3 text-ink my-3">{pillar.title}</h3>
-              <p className="text-body text-sm">{pillar.desc}</p>
-            </motion.div>
-          ))}
+          {pillars.map((pillar, i) => <PillarCard key={i} pillar={pillar} i={i} />)}
         </div>
       </div>
     </section>
@@ -597,7 +744,7 @@ function ProgramDetailSection() {
         />
 
         <div className="order-2">
-          <h2 className="text-h2 text-ink mb-2">Postpartum Strength Coaching</h2>
+          <h2 className="text-h2 text-ink mb-2"><RevealLine>Postpartum Strength Coaching</RevealLine></h2>
           <p className="text-caption text-black/50 mb-5">Starting after your assessment call</p>
           <p className="text-body mb-7">
             Whether you're 6 weeks or 2 years postpartum, coaching adapts to
@@ -642,9 +789,9 @@ function GallerySection() {
   return (
     <section id="results" className="bg-cream py-14 md:py-[clamp(64px,9vw,120px)] overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-5 md:px-16 mb-10">
-        <motion.h2 {...revealProps} className="text-h2 text-ink">
-          Real moms. <UnderlineWord>Real strength.</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-h2 text-ink">
+          <RevealLine>Real moms. <UnderlineWord>Real strength.</UnderlineWord></RevealLine>
+        </h2>
       </div>
 
       <div className="overflow-hidden">
@@ -669,9 +816,9 @@ function TransformationSection() {
   return (
     <section className="bg-blush px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[1200px] mx-auto">
-        <motion.h2 {...revealProps} className="text-h2 text-ink text-center mb-12">
-          Not "before and after." <UnderlineWord>Just honest progress.</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-h2 text-ink text-center mb-12">
+          <RevealLine>Not "before and after." <UnderlineWord>Just honest progress.</UnderlineWord></RevealLine>
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {items.map((item, i) => (
             <motion.div
@@ -699,9 +846,9 @@ function ReviewsSection() {
   return (
     <section className="bg-cream py-14 md:py-[clamp(64px,9vw,120px)] overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-5 md:px-16 mb-10">
-        <motion.h2 {...revealProps} className="text-h2 text-ink">
-          What moms are <UnderlineWord>actually saying</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-h2 text-ink">
+          <RevealLine>What moms are <UnderlineWord>actually saying</UnderlineWord></RevealLine>
+        </h2>
       </div>
 
       <div className="overflow-hidden">
@@ -721,9 +868,9 @@ function ProofDMSection() {
   return (
     <section className="bg-blush px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[900px] mx-auto">
-        <motion.h2 {...revealProps} className="text-h2 text-ink text-center mb-12">
-          The messages that matter <UnderlineWord>most</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-h2 text-ink text-center mb-12">
+          <RevealLine>The messages that matter <UnderlineWord>most</UnderlineWord></RevealLine>
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {messages.map((msg, i) => (
             <motion.div
@@ -796,9 +943,9 @@ function FAQSection() {
   return (
     <section id="guide" className="bg-cream px-5 md:px-16 py-14 md:py-[clamp(64px,9vw,140px)]">
       <div className="max-w-[720px] mx-auto">
-        <motion.h2 {...revealProps} className="text-h2 text-ink text-center mb-12">
-          Questions, <UnderlineWord>answered honestly</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-h2 text-ink text-center mb-12">
+          <RevealLine>Questions, <UnderlineWord>answered honestly</UnderlineWord></RevealLine>
+        </h2>
         <div>
           {faqs.map((f) => <FAQItem key={f.id} question={f.question} answer={f.answer} />)}
         </div>
@@ -948,9 +1095,11 @@ function EnquiryForm() {
 
       {errorMsg && <p className="text-[13px] mb-4" style={{ color: '#a13d2e' }}>{errorMsg}</p>}
 
-      <button type="submit" disabled={status === 'submitting'} className="btn-outline w-full !py-4">
-        {status === 'submitting' ? 'Sending…' : 'Send Your Enquiry'}
-      </button>
+      <Magnetic strength={0.25} className="w-full">
+        <button type="submit" disabled={status === 'submitting'} className="btn-outline w-full !py-4">
+          {status === 'submitting' ? 'Sending…' : 'Send Your Enquiry'}
+        </button>
+      </Magnetic>
 
       <p className="text-caption text-center mt-5" style={{ color: 'var(--ink-50)', textTransform: 'none', letterSpacing: 0 }}>
         Prefer Instagram?{' '}
@@ -972,9 +1121,9 @@ function FinalCTASection() {
   return (
     <section id="start" className="bg-cream px-5 md:px-16 py-20 md:py-[clamp(80px,12vw,160px)] text-center">
       <div className="max-w-[560px] mx-auto">
-        <motion.h2 {...revealProps} className="text-display text-ink mb-7">
-          Tell me where you're <UnderlineWord>starting from.</UnderlineWord>
-        </motion.h2>
+        <h2 className="text-display text-ink mb-7">
+          <RevealLine>Tell me where you're <UnderlineWord>starting from.</UnderlineWord></RevealLine>
+        </h2>
         <motion.p {...revealProps} className="text-body mb-9">
           One short note — not a funnel. Tell me a little about you and I'll take it from there.
         </motion.p>
@@ -1044,6 +1193,7 @@ function StickyMobileCTA() {
 export default function App() {
   return (
     <div className="bg-cream">
+      <CustomCursor />
       <ScrollProgressBar />
       <Navbar />
       <HeroSection />

@@ -218,6 +218,44 @@ img {
   .reviews-track { animation-duration: 50s; }
 }
 
+@keyframes marqueeSecondary {
+  from { transform: translateX(-33.3333%); }
+  to { transform: translateX(0); }
+}
+.marquee-secondary {
+  animation: marqueeSecondary 22s linear infinite;
+}
+
+/* The custom ink cursor replaces the system pointer only on devices with a
+   real mouse/trackpad — touch screens never get cursor:none. */
+@media (hover: hover) and (pointer: fine) {
+  body, a, button, input, textarea, [role="button"] {
+    cursor: none;
+  }
+}
+
+/* A warm highlight that follows the cursor within a card. Position must be
+   set on the element carrying this class; content inside needs its own
+   `relative z-[1]` wrapper to stay above the glow (see usage). */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), var(--spot-color, rgba(255, 255, 255, 0.8)), transparent 70%);
+  opacity: 0;
+  transition: opacity 350ms ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

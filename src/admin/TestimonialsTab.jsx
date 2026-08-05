@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { api } from './api.js';
-import { useToast, useConfirm, Spinner, EmptyState, Modal } from './ui.jsx';
+import { useToast, useConfirm, Spinner, EmptyState, Modal, PhotoUploadField } from './ui.jsx';
 
 function TestimonialForm({ initial, onCancel, onSave, saving }) {
   const [name, setName] = useState(initial?.name || '');
@@ -29,8 +29,7 @@ function TestimonialForm({ initial, onCancel, onSave, saving }) {
       <label className="text-caption text-black/60 block mb-1.5">What they said</label>
       <textarea value={quote} onChange={(e) => setQuote(e.target.value)} rows={4} className="field-input mb-4 resize-none" placeholder="Their testimonial…" />
 
-      <label className="text-caption text-black/60 block mb-1.5">Photo link (optional)</label>
-      <input type="text" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} className="field-input mb-2" placeholder="https://..." />
+      <PhotoUploadField value={avatarUrl} onChange={setAvatarUrl} aspect="aspect-square rounded-full" label="Photo (optional)" />
 
       {error && <p className="text-[13px] mt-3" style={{ color: '#a13d2e' }}>{error}</p>}
 

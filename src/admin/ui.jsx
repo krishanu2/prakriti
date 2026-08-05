@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { api } from './api.js';
 
 /* ---------------------------------- Toasts --------------------------------- */
 
@@ -163,6 +164,75 @@ export function EmptyState({ title, body }) {
     <div className="text-center py-16 px-6 border border-dashed border-black/[0.15] rounded-lg">
       <p className="font-inter font-semibold text-ink mb-1">{title}</p>
       {body && <p className="text-body text-[13px] max-w-[380px] mx-auto">{body}</p>}
+    </div>
+  );
+}
+
+/* ------------------------------ Photo upload field ---------------------------- */
+
+// A file picker that uploads straight to storage — no pasting links.
+// `value` is the current image URL (or '' if none yet); `onChange` fires
+// with the new URL once the upload finishes.
+export function PhotoUploadField({ value, onChange, aspect = 'aspect-[4/5] rounded-md', label = 'Photo' }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const showToast = useToast();
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('That image is larger than 10MB — please choose a smaller one.');
+      return;
+    }
+
+    setError('');
+    setUploading(true);
+    try {
+      const url = await api.uploadPhoto(file);
+      onChange(url);
+    } catch (err) {
+      setError(err.message || 'Upload failed. Please try again.');
+      showToast('Photo upload failed.', 'error');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <label className="text-caption text-black/60 block mb-1.5">{label}</label>
+      <div className="flex items-start gap-4">
+        <div className={`w-24 ${aspect} overflow-hidden bg-cream border border-black/[0.1] shrink-0 flex items-center justify-center`}>
+          {uploading ? (
+            <Spinner size={22} />
+          ) : value ? (
+            <img src={value} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-[10px] text-black/35 text-center px-1">No photo yet</span>
+          )}
+        </div>
+        <div className="flex-1">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="btn-outline !py-2.5 !px-5 !text-[12px]"
+          >
+            {uploading ? 'Uploading…' : value ? 'Replace Photo' : 'Choose Photo'}
+          </button>
+          <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+          <p className="text-[11.5px] text-black/45 mt-2">JPG, PNG, or WEBP. Up to 10MB.</p>
+          {error && <p className="text-[12px] mt-1.5" style={{ color: '#a13d2e' }}>{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }

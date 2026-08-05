@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { api } from './api.js';
-import { useToast, useConfirm, Spinner, EmptyState, Modal } from './ui.jsx';
+import { useToast, useConfirm, Spinner, EmptyState, Modal, PhotoUploadField } from './ui.jsx';
 
 function GalleryForm({ initial, onCancel, onSave, saving }) {
   const [imageUrl, setImageUrl] = useState(initial?.image_url || '');
@@ -11,7 +11,7 @@ function GalleryForm({ initial, onCancel, onSave, saving }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!imageUrl.trim()) {
-      setError('Paste an image link first.');
+      setError('Upload a photo first.');
       return;
     }
     setError('');
@@ -21,26 +21,12 @@ function GalleryForm({ initial, onCancel, onSave, saving }) {
   return (
     <form onSubmit={handleSubmit}>
       <p className="text-body text-[13px] mb-4">
-        Paste a link to any image — from Unsplash, Google Photos, Instagram, or
-        anywhere else online. It'll appear in the scrolling gallery on the site.
+        Upload a photo from your device. It'll appear in the scrolling gallery on the website.
       </p>
 
-      <label className="text-caption text-black/60 block mb-1.5">Image link</label>
-      <input
-        type="text"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        className="field-input mb-4"
-        placeholder="https://..."
-      />
+      <PhotoUploadField value={imageUrl} onChange={setImageUrl} />
 
-      {imageUrl.trim() && (
-        <div className="w-24 aspect-[4/5] rounded overflow-hidden bg-cream mb-4 border border-black/[0.08]">
-          <img src={imageUrl.trim()} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.opacity = 0.15)} />
-        </div>
-      )}
-
-      <label className="text-caption text-black/60 block mb-1.5">Description (optional)</label>
+      <label className="text-caption text-black/60 block mb-1.5 mt-5">Description (optional)</label>
       <input
         type="text"
         value={altText}
