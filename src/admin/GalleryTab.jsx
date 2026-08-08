@@ -58,7 +58,7 @@ export default function GalleryTab() {
 
   function load() {
     setError('');
-    api.getGallery().then(setItems).catch((err) => setError(err.message));
+    api.getGallery().then((d) => setItems(Array.isArray(d) ? d : [])).catch((err) => setError(err.message));
   }
 
   useEffect(load, []);

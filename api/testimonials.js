@@ -1,7 +1,8 @@
 import { sql } from './_lib/db.js';
 import { requireAdmin } from './_lib/auth.js';
+import { withErrorHandling } from './_lib/handler.js';
 
-export default async function handler(req, res) {
+async function testimonialsHandler(req, res) {
   const { id } = req.query;
 
   if (req.method === 'GET' && !id) {
@@ -60,3 +61,5 @@ export default async function handler(req, res) {
   res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withErrorHandling(testimonialsHandler);

@@ -1,4 +1,5 @@
 import { sql } from './_lib/db.js';
+import { withErrorHandling } from './_lib/handler.js';
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -14,7 +15,7 @@ function normalizePhone(phone) {
 const ALREADY_SUBMITTED_MESSAGE =
   "Looks like we already have your details on file — Prakriti will reach out soon! If this seems wrong, message @staystrongstaywild on Instagram.";
 
-export default async function handler(req, res) {
+async function leadsHandler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
@@ -64,3 +65,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Something went wrong. Please try again in a moment.' });
   }
 }
+
+export default withErrorHandling(leadsHandler);

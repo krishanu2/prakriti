@@ -47,7 +47,7 @@ export default function FaqsTab() {
 
   function load() {
     setError('');
-    api.getFaqs().then(setItems).catch((err) => setError(err.message));
+    api.getFaqs().then((d) => setItems(Array.isArray(d) ? d : [])).catch((err) => setError(err.message));
   }
 
   useEffect(load, []);

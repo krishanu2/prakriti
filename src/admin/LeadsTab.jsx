@@ -17,7 +17,7 @@ export default function LeadsTab() {
 
   function load() {
     setError('');
-    api.getLeads().then(setLeads).catch((err) => setError(err.message));
+    api.getLeads().then((d) => setLeads(Array.isArray(d) ? d : [])).catch((err) => setError(err.message));
   }
 
   useEffect(load, []);

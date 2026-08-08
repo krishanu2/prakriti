@@ -54,7 +54,7 @@ export default function TestimonialsTab() {
 
   function load() {
     setError('');
-    api.getTestimonials().then(setItems).catch((err) => setError(err.message));
+    api.getTestimonials().then((d) => setItems(Array.isArray(d) ? d : [])).catch((err) => setError(err.message));
   }
 
   useEffect(load, []);

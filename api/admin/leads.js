@@ -1,7 +1,8 @@
 import { sql } from '../_lib/db.js';
 import { requireAdmin } from '../_lib/auth.js';
+import { withErrorHandling } from '../_lib/handler.js';
 
-export default async function handler(req, res) {
+async function adminLeadsHandler(req, res) {
   const session = requireAdmin(req, res);
   if (!session) return;
 
@@ -34,3 +35,5 @@ export default async function handler(req, res) {
   res.setHeader('Allow', 'GET, PATCH, DELETE');
   return res.status(405).json({ error: 'Method not allowed' });
 }
+
+export default withErrorHandling(adminLeadsHandler);
