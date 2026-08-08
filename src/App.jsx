@@ -428,7 +428,7 @@ function Navbar() {
           </div>
           <Magnetic strength={0.3} className="hidden sm:inline-block">
             <a href="#start" className="btn-outline !py-2.5 !px-5 !text-[11px] block">
-              Start the Conversation
+              Let's Talk
             </a>
           </Magnetic>
           <button
@@ -462,7 +462,7 @@ function Navbar() {
                 </a>
               ))}
               <a href="#start" onClick={() => setDrawerOpen(false)} className="sm:hidden btn-outline mt-2">
-                Start the Conversation
+                Let's Talk About Your Recovery
               </a>
             </div>
           </motion.div>
@@ -483,10 +483,10 @@ function HeroSection() {
     <section ref={sectionRef} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] min-h-[auto] md:h-[clamp(500px,80vh,780px)]">
       <div className="bg-blush flex flex-col justify-center px-5 py-14 md:px-16 md:py-0 order-2 md:order-1">
         <h1 className="text-display text-ink mb-6">
-          <RevealLine delay={0}>Strength comes back</RevealLine>
-          <RevealLine delay={0.1}><UnderlineWord delay={0.55}>slower</UnderlineWord> than you</RevealLine>
-          <RevealLine delay={0.2}>expected.</RevealLine>
-          <RevealLine delay={0.3}><UnderlineWord delay={0.8}>That's okay.</UnderlineWord></RevealLine>
+          <RevealLine delay={0}>Your strength will come back.</RevealLine>
+          <RevealLine delay={0.1}>Just not as quickly</RevealLine>
+          <RevealLine delay={0.2}><UnderlineWord delay={0.65}>as you expected.</UnderlineWord></RevealLine>
+          <RevealLine delay={0.3}><UnderlineWord delay={0.8}>And that's okay.</UnderlineWord></RevealLine>
         </h1>
 
         <motion.p
@@ -495,8 +495,8 @@ function HeroSection() {
           transition={{ duration: 0.6, delay: 0.55 }}
           className="text-body max-w-[380px] mb-8"
         >
-          Pre and postnatal coaching built around healing first —
-          for real bodies, real recovery timelines, real Indian moms.
+          Pre- and postnatal coaching built around your body, your recovery,
+          and your real life — not someone else's timeline.
         </motion.p>
 
         <motion.div
@@ -506,7 +506,7 @@ function HeroSection() {
         >
           <Magnetic className="w-full sm:w-auto">
             <a href="#start" className="btn-outline w-full sm:w-auto text-center block">
-              Start the Conversation
+              Let's Talk About Your Recovery
             </a>
           </Magnetic>
         </motion.div>
@@ -609,7 +609,7 @@ function AboutPrakritiSection() {
             className="hidden md:block absolute -bottom-6 -right-6 bg-blush px-6 py-4 rounded border border-black/[0.10]"
           >
             <p className="font-archivo font-extrabold text-2xl text-ink leading-none">
-              <CountUp value={4} suffix="+" />
+              <CountUp value={6} suffix="+" />
             </p>
             <p className="text-caption text-black/50 mt-1">Years Specializing Postnatal</p>
           </motion.div>
@@ -624,24 +624,25 @@ function AboutPrakritiSection() {
           </h2>
           <motion.div {...revealProps} className="text-body space-y-4 mb-8">
             <p>
-              I'm a certified pre and postnatal fitness coach — but before that,
-              I was a client. I know what it's like to look at your own postpartum
-              body and not recognize it, and to be handed generic workouts that
-              made things worse instead of better.
+              I'm a certified pre- and postnatal fitness coach — but I'm a mom
+              too. I know what it's like to look at your postpartum body and
+              not recognize it — and to be given generic workouts that don't
+              account for what your body actually needs.
             </p>
             <p>
-              That's why every program I build starts with one question: where is
-              your body actually right now? Not where a caption says it should be
-              by six weeks. Not where your pre-baby jeans say it should be. Where
+              That's why every program I build starts with one question: where
+              is your body right now? Not where a caption says it should be at
+              six weeks. Not where your pre-baby jeans say it should be. Where
               it actually is.
             </p>
             <p>
-              I've spent the last four years specializing in diastasis recti
-              recovery and safe postpartum strength for Indian moms — because
-              healing looks different when you're also running a household,
-              feeding a newborn, and running on four hours of sleep. My job isn't
-              to push you harder. It's to help you get strong enough to trust
-              your body again.
+              I've spent the last six years specializing in diastasis recti
+              recovery and postpartum strength for moms — because healing
+              looks different when you're also running a household, feeding a
+              newborn, and running on four hours of sleep. I've helped 2000+
+              women rebuild strength, reconnect with their core, and feel at
+              home in their bodies again. My job isn't to push you harder —
+              it's to help you get strong enough to trust your body again.
             </p>
           </motion.div>
           <motion.a
@@ -764,8 +765,8 @@ function ProgramDetailSection() {
 
 function CredentialsStrip() {
   const stats = [
-    { render: () => <CountUp value={250} suffix="+" />, label: 'Moms Coached' },
-    { render: () => <CountUp value={4} />, label: 'Yrs Specializing Postnatal' },
+    { render: () => <CountUp value={2000} suffix="+" />, label: 'Women Coached' },
+    { render: () => <CountUp value={6} />, label: 'Yrs Specializing Postnatal' },
     { render: () => 'Certified', label: 'Pre/Postnatal Coach' },
     { render: () => <CountUp value={10} prefix="6-" suffix="wk" />, label: 'Avg. DR Gap Improvement' },
   ];
@@ -1181,7 +1182,7 @@ function StickyMobileCTA() {
             className="fixed bottom-0 left-0 right-0 z-[90] bg-cream border-t border-black/[0.18] px-4 py-3"
           >
             <a href="#start" className="btn-outline block text-center w-full">
-              Start the Conversation
+              Let's Talk About Your Recovery
             </a>
           </motion.div>
         )}
@@ -1192,7 +1193,7 @@ function StickyMobileCTA() {
 
 export default function App() {
   return (
-    <div className="bg-cream">
+    <div className="bg-cream custom-cursor-zone">
       <CustomCursor />
       <ScrollProgressBar />
       <Navbar />

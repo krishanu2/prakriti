@@ -226,10 +226,18 @@ img {
   animation: marqueeSecondary 22s linear infinite;
 }
 
-/* The custom ink cursor replaces the system pointer only on devices with a
-   real mouse/trackpad — touch screens never get cursor:none. */
+/* The custom ink cursor replaces the system pointer only within the public
+   site (.custom-cursor-zone) on devices with a real mouse/trackpad — never
+   on touch, and never on the admin dashboard, which has no replacement
+   cursor of its own and would otherwise be left with no visible pointer
+   at all. */
 @media (hover: hover) and (pointer: fine) {
-  body, a, button, input, textarea, [role="button"] {
+  .custom-cursor-zone,
+  .custom-cursor-zone a,
+  .custom-cursor-zone button,
+  .custom-cursor-zone input,
+  .custom-cursor-zone textarea,
+  .custom-cursor-zone [role="button"] {
     cursor: none;
   }
 }
