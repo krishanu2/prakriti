@@ -956,18 +956,15 @@ function FAQSection() {
 }
 
 function EnquiryForm() {
-  const STORAGE_KEY = 'ssw_enquiry_status';
-
+  // Deliberately no localStorage gate here: the server (checked fresh on
+  // every submit, by email OR phone) is the only source of truth for
+  // whether someone's already on file. A client-side flag would go stale
+  // the moment an admin removes that person's enquiry, permanently
+  // locking their browser out of the form with no way back in.
   const [status, setStatus] = useState('idle'); // idle | submitting | success | already
   const [errorMsg, setErrorMsg] = useState('');
   const [fields, setFields] = useState({ name: '', email: '', phone: '', message: '' });
   const [fieldErrors, setFieldErrors] = useState({});
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage.getItem(STORAGE_KEY) === 'submitted') {
-      setStatus('already');
-    }
-  }, []);
 
   function validate() {
     const errs = {};
@@ -994,12 +991,10 @@ function EnquiryForm() {
       const data = await res.json().catch(() => ({}));
 
       if (res.status === 201) {
-        window.localStorage.setItem(STORAGE_KEY, 'submitted');
         setStatus('success');
         return;
       }
       if (res.status === 409) {
-        window.localStorage.setItem(STORAGE_KEY, 'submitted');
         setStatus('already');
         return;
       }
@@ -1011,8 +1006,7 @@ function EnquiryForm() {
     }
   }
 
-  function resetForSomeoneElse() {
-    window.localStorage.removeItem(STORAGE_KEY);
+  function tryAgain() {
     setFields({ name: '', email: '', phone: '', message: '' });
     setFieldErrors({});
     setErrorMsg('');
@@ -1027,11 +1021,11 @@ function EnquiryForm() {
           We've got your details — Prakriti will reach out soon. No need to submit again.
         </p>
         <button
-          onClick={resetForSomeoneElse}
+          onClick={tryAgain}
           className="text-caption underline decoration-1 underline-offset-4"
           style={{ color: 'var(--ink-70)' }}
         >
-          Submitting for someone else?
+          Need to send this again, or for someone else?
         </button>
       </div>
     );
